@@ -4,7 +4,9 @@ import re
 import os
 import sys
 from utils import get_page, get_lyrics
+from scraping import AzLyricsScraper
 
+# Core catalogue.
 ALBUMS = [
     "Please Please Me",
     "With The Beatles",
@@ -49,8 +51,10 @@ def main():
                 break
     print(f"Num songs: {len(song_links)}")
 
-    os.makedirs("/tmp/beatles/", exist_ok=True)
+    scraper = AzLyricsScraper("./lyrics/beatles/")
 
+    # TODO move this stuff to scraping.py, since it will be reused
+    # later with Billboard.
     for song_link in progressbar.progressbar(song_links):
         song_id_match = SONG_ID_REGEX.search(song_link)
         if song_id_match is None:
