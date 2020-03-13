@@ -1,10 +1,9 @@
 from bs4 import BeautifulSoup
 import progressbar
 import re
-import os
 import sys
-from utils import get_page, get_lyrics
-from scraping import AzLyricsScraper
+from scraping import AzLyricsScraper, get_page
+from storage import LyricsDatabase
 
 # Core catalogue.
 ALBUMS = [
@@ -42,32 +41,30 @@ def main():
         for e in header.next_siblings:
             if isinstance(e, str):
                 continue
-            if e.name == "a":
-                ref = e.get("href")
+            if e.name == "div" and "listalbum-item" in e["class"]:
+                ref = e.find("a").get("href")
                 if "lyrics/beatles" in ref:
                     song_links.append(ref.replace("..", "https://www.azlyrics.com"))
-            if e.name == "div":
+            if e.name == "div" and "album" in e["class"]:
                 # Have hit the next album, stop.
                 break
     print(f"Num songs: {len(song_links)}")
 
-    scraper = AzLyricsScraper("./lyrics/beatles/")
+    db = LyricsDatabase("./lyrics/beatles/")
+    scraper = AzLyricsScraper()
 
-    # TODO move this stuff to scraping.py, since it will be reused
-    # later with Billboard.
     for song_link in progressbar.progressbar(song_links):
         song_id_match = SONG_ID_REGEX.search(song_link)
         if song_id_match is None:
             print("Failed to find ID of a song from its link:", song_link)
             sys.exit(1)
-        song_file_path = f"/tmp/beatles/{song_id_match.group(1)}"
-        if os.path.isfile(song_file_path):
+        song_data = {
+            "id": song_id_match.group(1)
+        }
+        if db.contains(song_data):
             continue # already downloaded
-        lyrics = get_lyrics(song_link)
-        if lyrics is not None:
-            song_file = open(song_file_path, "w")
-            song_file.write(lyrics)
-            song_file.close()
+        song_data["lyrics"] = scraper.scrape_lyrics(song_link)
+        db.write(song_data)
 
 if __name__ == "__main__":
     main()

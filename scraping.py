@@ -23,21 +23,17 @@ def get_page(link):
 
 class AzLyricsScraper:
 
-    def __init__(self, base_dir):
-        self.base_dir = base_dir
-        os.makedirs(base_dir, exist_ok=True)
-
     def scrape_lyrics(self, song_link):
         """Get lyrics from azlyrics.com at the given link.
 
-        Returns None if the page doesn't exist, otherwise it'll bubble up
-        an exception.
+        Raises PageDoesNotExist exception if the page doesn't exist.
         """
-        # TODO If the file exists already, then skip it.
-        # TODO save ID, artist name, song ID, lyrics to a JSON file.
         lyrics_page = get_page(song_link)
         if lyrics_page is None:
-            return None
+            raise PageDoesNotExistError()
         soup = BeautifulSoup(lyrics_page.content, 'html.parser')
         lyrics_div = soup.find("div", class_="ringtone").find_next_sibling("div")
         return lyrics_div.text.strip()
+
+class PageDoesNotExistError(Exception):
+    pass
