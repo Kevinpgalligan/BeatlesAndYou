@@ -21,7 +21,7 @@ def get_page(link):
     if response.status_code == 200:
         return response
     if response.status_code == 404:
-        raise PageDoesNotExistError(link)
+        raise PageDoesNotExistError("{} does not exist".format(link))
     raise Exception(f"Failed to get page {link}, got HTTP status code {response.status_code}.")
 
 class AzLyricsScraper:
