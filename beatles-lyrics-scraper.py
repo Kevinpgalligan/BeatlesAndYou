@@ -26,9 +26,6 @@ SONG_ID_REGEX = re.compile(r"/([a-zA-Z0-9-]+)\.html")
 
 def main():
     beatles_songs_page = get_page("https://www.azlyrics.com/b/beatles.html")
-    if beatles_songs_page is None:
-        print("Failed to get list of songs.")
-        sys.exit(1)
     soup = BeautifulSoup(beatles_songs_page.content, 'html.parser')
     album_headers = [header for header in soup.find_all("div", class_="album")
                      if any(album.lower() in header.text.lower() for album in ALBUMS)]

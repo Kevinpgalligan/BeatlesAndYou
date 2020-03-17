@@ -3,3 +3,4 @@ requests
 ratelimit
 progressbar2
 retry
+nltk

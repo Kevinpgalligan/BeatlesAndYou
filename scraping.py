@@ -14,11 +14,14 @@ REQUEST_WAIT_SECONDS = 10
 @sleep_and_retry                                      # rate-limiting behaviour
 @limits(calls=1, period=REQUEST_WAIT_SECONDS)
 def get_page(link):
+    """Get HTML page at given link.
+    Raises PageDoesNotExistError if it doesn't exist.
+    Raises generic Exception if unexpected HTTP codes are encountered."""
     response = requests.get(link)
     if response.status_code == 200:
         return response
     if response.status_code == 404:
-        return None
+        raise PageDoesNotExistError(link)
     raise Exception(f"Failed to get page {link}, got HTTP status code {response.status_code}.")
 
 class AzLyricsScraper:
@@ -29,11 +32,10 @@ class AzLyricsScraper:
         Raises PageDoesNotExist exception if the page doesn't exist.
         """
         lyrics_page = get_page(song_link)
-        if lyrics_page is None:
-            raise PageDoesNotExistError()
         soup = BeautifulSoup(lyrics_page.content, 'html.parser')
         lyrics_div = soup.find("div", class_="ringtone").find_next_sibling("div")
         return lyrics_div.text.strip()
 
 class PageDoesNotExistError(Exception):
-    pass
+    def __init__(self, msg):
+        super().__init__(msg)

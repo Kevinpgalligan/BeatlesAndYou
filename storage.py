@@ -19,5 +19,16 @@ class LyricsDatabase:
     def contains(self, song_data):
         return os.path.exists(self._get_path(song_data))
 
-    def _get_path(self, song_data):
-        return os.path.join(self.base_dir, song_data["id"])
+    def _get_path(self, x):
+        if isinstance(x, str):
+            song_id = x
+        else:
+            song_id = x["d"]
+        return os.path.join(self.base_dir, song_id)
+
+    def load(self, song_id):
+        with open(self._get_path(song_id), "r") as f:
+            return json.load(f)
+
+    def __iter__(self):
+        return iter(self.load(song_id) for song_id in os.listdir(self.base_dir))
