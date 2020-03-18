@@ -4,3 +4,4 @@ ratelimit
 progressbar2
 retry
 nltk
+PySimpleGUI
