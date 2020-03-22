@@ -25,8 +25,10 @@ def create_window(header, data):
                 key="TABLE")
         ],
         [sg.Text(
-            "Coverage: {}%; {} remaining.".format(
+            "Coverage: {}%; {} total, {} done, {} remaining.".format(
                 round(done/len(data)*100., 2),
+                len(data),
+                done,
                 len(data)-done))]
     ]
     return sg.Window("Table", layout, grab_anywhere=False)
