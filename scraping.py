@@ -56,6 +56,51 @@ class GoogleLyricsScraper:
             raise LyricsNotFoundError("Couldn't find lyrics for song {}, by {}".format(name, artist))
         return "\n".join(lyric_blocks)
 
+class GeniusScraper:
+    def scrape(self, link):
+        # TODO
+        pass
+
+class Top40dbScraper:
+    def scrape(self, link):
+        # TODO
+        pass
+
+class LyricsFreakScraper:
+    def scrape(self, link):
+        # TODO
+        pass
+
+class GenericLyricsScraper:
+    def __init__(self):
+        """Unlike the Google scraper, doesn't scrape directly from
+        the lyrics displayed by Google. Looks through search results
+        and matches them with the appropriate scraper. Eg if there's
+        a link for genius.com, passes that to the genius.com scraper."""
+        self._scrapers = [
+            ("genius.com", GeniusScraper()),
+            ("top40db.net", Top40dbScraper()),
+            ("lyricsfreak.com", LyricsFreakScraper())
+        ]
+
+    @sleep_and_retry
+    @limits(calls=1, period=REQUEST_WAIT_SECONDS)
+    def scrape_lyrics(self, artist, name):
+        pg = get_page("https://www.google.com/search?q="
+            + urllib.parse.quote(" ".join((artist, name, "lyrics"))))
+        soup = BeautifulSoup(pg.content, 'html.parser')
+        links = soup.find_all("a")
+        for link in links:
+            href = link.get("href")
+            try:
+                matching_scraper = next(scraper
+                    for name, scraper in self._scrapers
+                    if name in href)
+                return matching_scraper.scrape(href)
+            except Exception:
+                continue # try the next link
+        raise LyricsNotFoundError("Could not scrape lyrics from any website in first page of results.")
+
 class LyricsNotFoundError(Exception):
     def __init__(self, msg):
         super().__init__(msg)
