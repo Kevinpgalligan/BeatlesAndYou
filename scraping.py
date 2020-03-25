@@ -58,18 +58,26 @@ class GoogleLyricsScraper:
 
 class GeniusScraper:
     def scrape(self, link):
-        # TODO
-        pass
+        pg = get_page(link)
+        soup = BeautifulSoup(pg.content, 'html.parser')
+        for div in soup.select("div.lyrics"):
+            return div.get_text()
 
 class Top40dbScraper:
     def scrape(self, link):
-        # TODO
-        pass
+        pg = get_page(link)
+        soup = BeautifulSoup(pg.content, 'html.parser')
+        for e in soup.find_all(["small", "script"]):
+            e.decompose() # remove the log-in message and ad shit
+        for div in soup.select("div#divTOP40DB_LYRICS"):
+            return div.get_text()
 
 class LyricsFreakScraper:
     def scrape(self, link):
-        # TODO
-        pass
+        pg = get_page(link)
+        soup = BeautifulSoup(pg.content, 'html.parser')
+        for div in soup.select("div#content"):
+            return div.get_text()
 
 class GenericLyricsScraper:
     def __init__(self):
@@ -89,17 +97,37 @@ class GenericLyricsScraper:
         pg = get_page("https://www.google.com/search?q="
             + urllib.parse.quote(" ".join((artist, name, "lyrics"))))
         soup = BeautifulSoup(pg.content, 'html.parser')
-        links = soup.find_all("a")
-        for link in links:
-            href = link.get("href")
+        for element in soup.select("a"):
+            print("========TRYING LINK=========")
+            link = element.get("href")
             try:
-                matching_scraper = next(scraper
-                    for name, scraper in self._scrapers
-                    if name in href)
-                return matching_scraper.scrape(href)
-            except Exception:
+                print("Processing link:", link)
+                # The parent div should contain the title of the page -- which, for
+                # all of the sites we're using, should in turn contain the name of
+                # the song.
+                if not fuzzy_matches(name, element.parent.get_text()):
+                    # skip this link to ensure that we're not just getting the lyrics of
+                    # a random song by the same artist. Don't bother to check that the
+                    # artist is the same; in all likelihood, if the artist is
+                    # different, it's a different version of the same song.
+                    print("song name does not match:", element.parent.get_text())
+                    continue
+                for site_name, scraper in self._scrapers:
+                    if site_name in link:
+                        print("Matches with scraper for", site_name)
+                        if link.startswith("/"):
+                            link = "https://www.google.com" + link
+                        print("Trying to scrape from link", link)
+                        return scraper.scrape(link)
+            except Exception as e:
                 continue # try the next link
         raise LyricsNotFoundError("Could not scrape lyrics from any website in first page of results.")
+
+def fuzzy_matches(important_s, s):
+    important_tokens = set([token.lower() for token in important_s.strip().split()])
+    tokens = set([token.lower() for token in s.strip().split()])
+    # threshold chosen arbitrarily, pretty much
+    return len(important_tokens.intersection(tokens)) / len(important_tokens) >= 0.49
 
 class LyricsNotFoundError(Exception):
     def __init__(self, msg):
