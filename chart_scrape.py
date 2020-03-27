@@ -1,14 +1,17 @@
 from bs4 import BeautifulSoup
 from scraping import get_page
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import progressbar
 from storage import LyricsDatabase
 import re
 import os.path
 import json
+from ratelimit import limits, sleep_and_retry
+from retry import retry
+import requests
 
-START_DATE = date.fromisoformat("1962-01-06")
-END_DATE = date.fromisoformat("1970-01-01")
+START_DATE = datetime.strptime("1962-01-06", "%Y-%m-%d")
+END_DATE = datetime.strptime("1970-01-01", "%Y-%m-%d")
 
 DATES_PROCESSED_PATH = "./chart-dates-processed.tmp"
 
@@ -17,6 +20,9 @@ INVALID_CHARS_REGEX = re.compile("[^A-Za-z0-9]")
 def normalise(s):
     return INVALID_CHARS_REGEX.sub("", s).lower()
 
+@retry(requests.exceptions.RequestException, tries=5)
+@sleep_and_retry
+@limits(calls=1, period=5)
 def get_top100_chart(d):
     pg = get_page(f"https://www.billboard.com/charts/hot-100/{d}")
     soup = BeautifulSoup(pg.content, "html.parser")
@@ -40,10 +46,14 @@ def get_top100_chart(d):
 def main():
     db = LyricsDatabase("./lyrics/charts/")
 
+    for song in db:
+        song["success-score"] = 0
+        db.write(song)
+
     dates = []
     d = START_DATE
     while d < END_DATE:
-        dates.append(d.isoformat())
+        dates.append(d.strftime("%Y-%m-%d"))
         d += timedelta(days=7)
 
     if not os.path.exists(DATES_PROCESSED_PATH):
@@ -62,12 +72,8 @@ def main():
             for song in songs:
                 if db.contains(song):
                     db_song = db.load(song)
-                    if song["success-score"] > db_song["success-score"]:
-                        # Update the DB version of the song, rather than
-                        # overwriting it. Prevents loss of attributes such
-                        # as lyrics that are added at a later point.
-                        db_song["success-score"] = song["success-score"]
-                        db.write(db_song)
+                    db_song["success-score"] += song["success-score"]
+                    db.write(db_song)
                 else:
                     db.write(song)
         except Exception as e:

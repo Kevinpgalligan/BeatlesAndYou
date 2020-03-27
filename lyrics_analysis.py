@@ -1,6 +1,7 @@
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from storage import LyricsDatabase
+import sys
 
 WORD_FORMS = {
     "you": ["you", "your", "yours", "yourself"],
@@ -31,22 +32,31 @@ def update_word_counts(word_counts, lyrics):
             word_counts[word] += 1
 
 def main():
-    db = LyricsDatabase("./lyrics/beatles/")
+    if len(sys.argv) < 2:
+        print("missing program arg.")
+        sys.exit(1)
+    if sys.argv[1] == "beatles":
+        songs = [song for song in LyricsDatabase("./lyrics/beatles/") if "lyrics" in song]
+    elif sys.argv[1] == "charts":
+        songs = [song for song in LyricsDatabase("./lyrics/charts/") if "lyrics" in song]
+        # Remove Beatles songs...
+        songs = [song for song in songs if "beatles" not in song["artist"].lower()]
+    else:
+        print("invalid program arg.")
+        sys.exit(1)
 
-    songs = 0
     first_line_yous = 0
     word_counts = {word: 0 for word in WORDS}
-    for song in db:
-        songs += 1
+    for song in songs:
         lyrics = song["lyrics"]
         if you_in_first_line(lyrics):
             first_line_yous += 1
         update_word_counts(word_counts, lyrics)
 
-    print(f"songs processed: {songs}")
-    print(f"percentage with 'you' in first line: {first_line_yous/songs*100.}%")
+    print(f"songs processed: {len(songs)}")
+    print(f"percentage with 'you' in first line: {first_line_yous/len(songs)*100.}%")
     for word, count in word_counts.items():
-        print("percentage with '{}' somewhere in the song: {}%".format(word, count/songs*100.))
+        print("percentage with '{}' somewhere in the song: {}%".format(word, count/len(songs)*100.))
 
 if __name__ == "__main__":
     main()

@@ -12,6 +12,9 @@ class LyricsDatabase:
         with open(self._get_path(song_data), "w") as f:
             json.dump(song_data, f)
 
+    def delete(self, song_data):
+        os.remove(self._get_path(song_data))
+
     def contains(self, song_data):
         return os.path.exists(self._get_path(song_data))
 

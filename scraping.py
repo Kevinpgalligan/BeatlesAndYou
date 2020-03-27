@@ -60,8 +60,10 @@ class GeniusScraper:
     def scrape(self, link):
         pg = get_page(link)
         soup = BeautifulSoup(pg.content, 'html.parser')
-        for div in soup.select("div.lyrics"):
-            return div.get_text()
+        divs = soup.select("div.lyrics")
+        if not divs:
+            raise LyricsNotFoundError("Couldn't find lyrics div on genius.com page.")
+        return divs[0].get_text()
 
 class Top40dbScraper:
     def scrape(self, link):
@@ -69,15 +71,19 @@ class Top40dbScraper:
         soup = BeautifulSoup(pg.content, 'html.parser')
         for e in soup.find_all(["small", "script"]):
             e.decompose() # remove the log-in message and ad shit
-        for div in soup.select("div#divTOP40DB_LYRICS"):
-            return div.get_text()
+        divs = soup.select("div#divTOP40DB_LYRICS")
+        if not divs:
+            raise LyricsNotFoundError("Couldn't find lyrics div on top40db.net page.")
+        return divs[0].get_text()
 
 class LyricsFreakScraper:
     def scrape(self, link):
         pg = get_page(link)
         soup = BeautifulSoup(pg.content, 'html.parser')
-        for div in soup.select("div#content"):
-            return div.get_text()
+        divs = soup.select("div#content")
+        if not divs:
+            raise LyricsNotFoundError("Couldn't find lyrics div on lyricsfreak.com page.")
+        return divs[0].get_text()
 
 class GenericLyricsScraper:
     def __init__(self):
