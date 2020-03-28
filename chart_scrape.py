@@ -13,8 +13,6 @@ import requests
 START_DATE = datetime.strptime("1962-01-06", "%Y-%m-%d")
 END_DATE = datetime.strptime("1970-01-01", "%Y-%m-%d")
 
-DATES_PROCESSED_PATH = "./chart-dates-processed.tmp"
-
 INVALID_CHARS_REGEX = re.compile("[^A-Za-z0-9]")
 
 def normalise(s):
@@ -55,15 +53,6 @@ def main():
     while d < END_DATE:
         dates.append(d.strftime("%Y-%m-%d"))
         d += timedelta(days=7)
-
-    if not os.path.exists(DATES_PROCESSED_PATH):
-        with open(DATES_PROCESSED_PATH, "w") as f:
-            json.dump([], f)
-    with open(DATES_PROCESSED_PATH, "r") as f:
-        dates_processed = json.load(f)
-        print(f"{len(dates_processed)} chart dates of {len(dates)} already processed.")
-        dates = [d for d in dates if d not in dates_processed]
-        print(f"Processing remaining {len(dates)}.")
 
     n = 0
     for d in progressbar.progressbar(dates):

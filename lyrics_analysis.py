@@ -22,7 +22,7 @@ def lowercase_stems(s):
     return [STEMMER.stem(token).lower() for token in word_tokenize(s)]
 
 def you_in_first_line(lyrics):
-    return any(STEMMER.stem(word) in lowercase_stems(lyrics.strip("\n").split("\n")[0])
+    return any(STEMMER.stem(word) in lowercase_stems(lyrics.strip().split("\n")[0])
                for word in WORD_FORMS["you"])
 
 def update_word_counts(word_counts, lyrics):

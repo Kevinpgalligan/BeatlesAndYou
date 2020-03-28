@@ -29,5 +29,8 @@ class LyricsDatabase:
         with open(self._get_path(x), "r") as f:
             return json.load(f)
 
+    def remove(self, x):
+        os.remove(self._get_path(x))
+
     def __iter__(self):
         return iter(self.load(song_id) for song_id in os.listdir(self.base_dir))
